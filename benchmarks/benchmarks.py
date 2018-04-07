@@ -49,7 +49,7 @@ def singleBenchmark(requestsPerSecond, requestSize, numNodes, numNodesReadonly =
         p.communicate()
         errRates.append(float(p.returncode) / 100.0)
     avgRate = sum(errRates) / len(errRates)
-    # print('average success rate:', avgRate)
+    print('average success rate:', avgRate)
     if delay:
         return avgRate
     return avgRate >= 0.9
@@ -122,7 +122,7 @@ if __name__ == '__main__':
     if mode == 'delay':
         print('Average delay:', singleBenchmark(50, 10, 5, delay=True))
     elif mode == 'rps':
-        # measure_RPS_vs_Clustersize()
+        measure_RPS_vs_Clustersize()
         measure_RPS_vs_Requestsize()
 
     elif mode == 'custom':
