@@ -49,7 +49,7 @@ if __name__ == '__main__':
         print('Usage: %s RPS requestSize selfHost:port partner1Host:port partner2Host:port ...' % sys.argv[0])
         sys.exit(-1)
 
-    numCommands = int(sys.argv[1])
+    numCommands = int(float(sys.argv[1]))
     cmdSize = int(sys.argv[2])
 
     selfAddr = sys.argv[3]
@@ -70,7 +70,7 @@ if __name__ == '__main__':
 
     while time.time() - startTime < 25.0:
         st = time.time()
-        for i in xrange(0, numCommands):
+        for i in range(0, numCommands):
             obj.testMethod(getRandStr(cmdSize), time.time(), callback=clbck)
             _g_sent += 1
         delta = time.time() - st
@@ -83,7 +83,7 @@ if __name__ == '__main__':
     print('SUCCESS RATE:', successRate)
 
     delays = sorted(_g_delays)
-    avgDelay = _g_delays[len(_g_delays) / 2]
+    avgDelay = _g_delays[len(_g_delays) // 2]
     print('AVG DELAY:', avgDelay)
 
     if successRate < 0.9:
