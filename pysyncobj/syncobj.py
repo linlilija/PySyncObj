@@ -302,7 +302,7 @@ class SyncObj(object):
                 self.__raftMatchIndex[nodeAddr] = 0
             # Initialize quorum size if unspecified
             if self.__quorumSize1 == 0 and self.__quorumSize2 == 0:
-                self.__quorumSize1 = (len(self.__nodes)+1) / 2
+                self.__quorumSize1 = (len(self.__nodes)+1) // 2
                 self.__quorumSize2 = len(self.__nodes) + 1 - self.__quorumSize1
             self.__needLoadDumpFile = True
             self.__isInitialized = True
