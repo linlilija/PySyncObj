@@ -13,7 +13,7 @@ class TestObj(SyncObj):
         self.__appliedCommands = 0
 
     @replicated
-    def testMethod(self):
+    def testMethod(self, value):
         self.__appliedCommands += 1
 
     def getNumCommandsApplied(self):
@@ -24,7 +24,7 @@ _g_success = 0
 _g_error = 0
 _g_errors = defaultdict(int)
 
-def clbck(err):
+def clbck(res, err):
     global _g_error, _g_success
     if err == FAIL_REASON.SUCCESS:
         _g_success += 1

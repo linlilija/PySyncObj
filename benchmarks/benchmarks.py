@@ -91,12 +91,12 @@ def printUsage():
     sys.exit(-1)
 
 
-def measure_RPS_vs_Clustersize():
+def measure_RPS_vs_Clustersize(q2=0):
     """Measure max RPS as a function of cluster size."""
     cluster_size = [i for i in range(3, 8)]
     rps = []
     for i in cluster_size:
-        res = detectMaxRps(200, i, 0, 0)
+        res = detectMaxRps(200, i, i+1-q2, q2) if q2 != 0 else detectMaxRps(200, i, 0, 0)
         print('nodes number: %d, rps: %d' % (i, int(res)))
         rps.append(res)
     plt.plot(cluster_size, rps)
@@ -127,10 +127,14 @@ if __name__ == '__main__':
         printUsage()
 
     mode = sys.argv[1]
+
+    # set quorum size for phase 2: 0 -> normal Raft, >0 -> flexible Raft
+    quorumSize2 = 1
+
     if mode == 'delay':
         print('Average delay:', singleBenchmark(50, 10, 5, delay=True))
     elif mode == 'rps':
-        measure_RPS_vs_Clustersize()
+        measure_RPS_vs_Clustersize(quorumSize2)
         # measure_RPS_vs_Requestsize()
 
     elif mode == 'custom':
