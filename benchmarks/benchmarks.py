@@ -79,7 +79,7 @@ def doDetectMaxRps(requestSize, numNodes, quorumSize1=0, quorumSize2=0):
 def detectMaxRps(requestSize, numNodes,quorumSize1=0, quorumSize2=0):
     """Measure max RPS three times and use median as result."""
     results = []
-    for i in range(0, 3):
+    for i in range(0, 5):
         res = doDetectMaxRps(requestSize, numNodes, quorumSize1, quorumSize2)
         print('iteration %d, current max %d' % (i, res))
         results.append(res)
@@ -118,6 +118,24 @@ def measure_RPS_vs_Requestsize():
     plt.xlabel("Request Size")
     plt.ylabel("RPS")
     plt.title("RPS vs Request Size")
+    plt.show()
+
+
+def test_flexible_raft():
+    """Measure RPS vs cluster size of flexible Raft"""
+    color_list = ['red', 'green', 'blue', 'orange']
+    cluster_size = [i for i in range(3, 8)]
+    # test different phase 2 quorum size
+    for j in range(0, 4):
+        rps = []
+        for i in cluster_size:
+            res = detectMaxRps(200, i, i + 1 - j, j) if j != 0 else detectMaxRps(200, i, 0, 0)
+            rps.append(res)
+        plt.plot(cluster_size, rps, color=color_list[j], label=("q2=%d" % j))
+    plt.xlabel("Cluster Size")
+    plt.ylabel("RPS")
+    plt.title("RPS vs Cluster Size")
+    plt.legend()
     plt.show()
 
 
