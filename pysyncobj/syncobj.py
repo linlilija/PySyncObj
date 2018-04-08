@@ -90,7 +90,7 @@ class SyncObjConsumer(object):
 # https://github.com/bakwc/PySyncObj
 
 class SyncObj(object):
-    def __init__(self, selfNodeAddr, otherNodesAddrs, conf=None, consumers=None):
+    def __init__(self, selfNodeAddr, otherNodesAddrs, quorumSize1=0, quorumSize2=0, conf=None, consumers=None):
         """
         Main SyncObj class, you should inherit your own class from it.
 
@@ -156,7 +156,8 @@ class SyncObj(object):
         self.__noopIDx = None
         self.__destroying = False
         self.__recvTransmission = ''
-
+        self.__quorumSize1 = quorumSize1
+        self.__quorumSize2 = quorumSize2
 
         self.__startTime = time.time()
         globalDnsResolver().setTimeouts(self.__conf.dnsCacheTime, self.__conf.dnsFailCacheTime)
@@ -299,6 +300,10 @@ class SyncObj(object):
                 self.__nodes.append(Node(self, nodeAddr, shouldConnect))
                 self.__raftNextIndex[nodeAddr] = self.__getCurrentLogIndex() + 1
                 self.__raftMatchIndex[nodeAddr] = 0
+            # Initialize quorum size if unspecified
+            if self.__quorumSize1 == 0 and self.__quorumSize2 == 0:
+                self.__quorumSize1 = (len(self.__nodes)+1) / 2
+                self.__quorumSize2 = len(self.__nodes) + 1 - self.__quorumSize1
             self.__needLoadDumpFile = True
             self.__isInitialized = True
             self.__bindedEvent.set()
@@ -541,7 +546,7 @@ class SyncObj(object):
                         'last_log_term': self.__getCurrentLogTerm(),
                     })
                 self.__onLeaderChanged()
-                if self.__votesCount > (len(self.__nodes) + 1) / 2:
+                if self.__votesCount >= self.__quorumSize1:
                     self.__onBecomeLeader()
 
         if self.__raftState == _RAFT_STATE.LEADER:
@@ -551,7 +556,7 @@ class SyncObj(object):
                 for node in self.__nodes:
                     if self.__raftMatchIndex[node.getAddress()] >= nextCommitIndex:
                         count += 1
-                if count > (len(self.__nodes) + 1) / 2:
+                if count >= self.__quorumSize2:
                     self.__raftCommitIndex = nextCommitIndex
                 else:
                     break
@@ -561,7 +566,7 @@ class SyncObj(object):
             for node in self.__nodes:
                 if self.__lastResponseTime[node.getAddress()] > deadline:
                     count += 1
-            if count <= (len(self.__nodes) + 1) / 2:
+            if count < self.__quorumSize2:
                 self.__setState(_RAFT_STATE.FOLLOWER)
                 self.__raftLeader = None
 
@@ -827,7 +832,7 @@ class SyncObj(object):
             if message['type'] == 'response_vote' and message['term'] == self.__raftCurrentTerm:
                 self.__votesCount += 1
 
-                if self.__votesCount > (len(self.__nodes) + 1) / 2:
+                if self.__votesCount >= self.__quorumSize1:
                     self.__onBecomeLeader()
 
         if self.__raftState == _RAFT_STATE.LEADER:

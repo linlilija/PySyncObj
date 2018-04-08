@@ -8,12 +8,12 @@ from pysyncobj import SyncObj, replicated, SyncObjConf, FAIL_REASON
 
 class TestObj(SyncObj):
 
-    def __init__(self, selfNodeAddr, otherNodeAddrs):
-        super(TestObj, self).__init__(selfNodeAddr, otherNodeAddrs)
+    def __init__(self, selfNodeAddr, otherNodeAddrs, quorumSize1=0, quorumSize2=0):
+        super(TestObj, self).__init__(selfNodeAddr, otherNodeAddrs, quorumSize1, quorumSize2)
         self.__appliedCommands = 0
 
     @replicated
-    def testMethod(self, value):
+    def testMethod(self):
         self.__appliedCommands += 1
 
     def getNumCommandsApplied(self):
@@ -24,7 +24,7 @@ _g_success = 0
 _g_error = 0
 _g_errors = defaultdict(int)
 
-def clbck(res, err):
+def clbck(err):
     global _g_error, _g_success
     if err == FAIL_REASON.SUCCESS:
         _g_success += 1
@@ -37,21 +37,23 @@ def getRandStr(l):
     return f % random.randrange(16 ** l)
 
 if __name__ == '__main__':
-    if len(sys.argv) < 5:
-        print('Usage: %s RPS requestSize selfHost:port partner1Host:port partner2Host:port ...' % sys.argv[0])
+    if len(sys.argv) < 7:
+        print('Usage: %s RPS requestSize quorumSize1 quorumSize2 selfHost:port partner1Host:port partner2Host:port ...' % sys.argv[0])
         sys.exit(-1)
 
     numCommands = int(float(sys.argv[1]))
     cmdSize = int(sys.argv[2])
 
-    selfAddr = sys.argv[3]
+    quorumSize1 = int(sys.argv[3])
+    quorumSize2 = int(sys.argv[4])
+    selfAddr = sys.argv[5]
     if selfAddr == 'readonly':
         selfAddr = None
-    partners = sys.argv[4:]
+    partners = sys.argv[6:]
 
     maxCommandsQueueSize = int(0.9 * SyncObjConf().commandsQueueSize / len(partners))
 
-    obj = TestObj(selfAddr, partners)
+    obj = TestObj(selfAddr, partners, quorumSize1, quorumSize2)
 
     while obj._getLeader() is None:
         time.sleep(0.5)
