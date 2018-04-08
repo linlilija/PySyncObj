@@ -2,6 +2,7 @@ import time
 import socket
 import zlib
 import struct
+import random
 
 import pysyncobj.pickle as pickle
 import pysyncobj.win_inet_pton
@@ -30,7 +31,7 @@ def _getAddrType(addr):
 class TcpConnection(object):
 
     def __init__(self, poller, onMessageReceived = None, onConnected = None, onDisconnected = None,
-                 socket=None, timeout=10.0, sendBufferSize = 2 ** 13, recvBufferSize = 2 ** 13):
+                 socket=None, timeout=10.0, sendBufferSize = 2 ** 13, recvBufferSize = 2 ** 13, dropRatio = 0.0):
 
         self.sendRandKey = None
         self.recvRandKey = None
@@ -59,6 +60,7 @@ class TcpConnection(object):
         self.__onDisconnected = onDisconnected
         self.__sendBufferSize = sendBufferSize
         self.__recvBufferSize = recvBufferSize
+        self.__dropRatio = dropRatio  # simulate message loss
 
     def setOnMessageReceivedCallback(self, onMessageReceived):
         self.__onMessageReceived = onMessageReceived
@@ -179,6 +181,10 @@ class TcpConnection(object):
         if not self.__writeBuffer:
             return False
         try:
+            # simulate message loss
+            if random.random() < self.__dropRatio:
+                time.sleep(0.2)
+                return True
             res = self.__socket.send(self.__writeBuffer)
             if res < 0:
                 self.disconnect()

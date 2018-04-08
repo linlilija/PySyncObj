@@ -90,7 +90,7 @@ class SyncObjConsumer(object):
 # https://github.com/bakwc/PySyncObj
 
 class SyncObj(object):
-    def __init__(self, selfNodeAddr, otherNodesAddrs, quorumSize1=0, quorumSize2=0, conf=None, consumers=None):
+    def __init__(self, selfNodeAddr, otherNodesAddrs, quorumSize1=0, quorumSize2=0, dropRatio=0.0, conf=None, consumers=None):
         """
         Main SyncObj class, you should inherit your own class from it.
 
@@ -156,8 +156,9 @@ class SyncObj(object):
         self.__noopIDx = None
         self.__destroying = False
         self.__recvTransmission = ''
-        self.__quorumSize1 = quorumSize1
+        self.__quorumSize1 = quorumSize1  # flexible quorum size
         self.__quorumSize2 = quorumSize2
+        self.__dropRatio = dropRatio  # simulate message loss
 
         self.__startTime = time.time()
         globalDnsResolver().setTimeouts(self.__conf.dnsCacheTime, self.__conf.dnsFailCacheTime)
@@ -179,7 +180,8 @@ class SyncObj(object):
             self.__server = TcpServer(self._poller, host, port, onNewConnection=self.__onNewConnection,
                                       sendBufferSize=self.__conf.sendBufferSize,
                                       recvBufferSize=self.__conf.recvBufferSize,
-                                      connectionTimeout=self.__conf.connectionTimeout)
+                                      connectionTimeout=self.__conf.connectionTimeout,
+                                      dropRatio=self.__dropRatio)
 
         self._methodToID = {}
         self._idToMethod = {}

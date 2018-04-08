@@ -8,8 +8,8 @@ from pysyncobj import SyncObj, replicated, SyncObjConf, FAIL_REASON
 
 class TestObj(SyncObj):
 
-    def __init__(self, selfNodeAddr, otherNodeAddrs, quorumSize1=0, quorumSize2=0):
-        super(TestObj, self).__init__(selfNodeAddr, otherNodeAddrs, quorumSize1, quorumSize2)
+    def __init__(self, selfNodeAddr, otherNodeAddrs, quorumSize1=0, quorumSize2=0, drop_ratio=0.0):
+        super(TestObj, self).__init__(selfNodeAddr, otherNodeAddrs, quorumSize1, quorumSize2, drop_ratio)
         self.__appliedCommands = 0
 
     @replicated
@@ -37,7 +37,7 @@ def getRandStr(l):
     return f % random.randrange(16 ** l)
 
 if __name__ == '__main__':
-    if len(sys.argv) < 7:
+    if len(sys.argv) < 8:
         print('Usage: %s RPS requestSize quorumSize1 quorumSize2 selfHost:port partner1Host:port partner2Host:port ...' % sys.argv[0])
         sys.exit(-1)
 
@@ -46,14 +46,15 @@ if __name__ == '__main__':
 
     quorumSize1 = int(sys.argv[3])
     quorumSize2 = int(sys.argv[4])
-    selfAddr = sys.argv[5]
+    drop_ratio = float(sys.argv[5])
+    selfAddr = sys.argv[6]
     if selfAddr == 'readonly':
         selfAddr = None
-    partners = sys.argv[6:]
+    partners = sys.argv[7:]
 
     maxCommandsQueueSize = int(0.9 * SyncObjConf().commandsQueueSize / len(partners))
 
-    obj = TestObj(selfAddr, partners, quorumSize1, quorumSize2)
+    obj = TestObj(selfAddr, partners, quorumSize1, quorumSize2, drop_ratio)
 
     while obj._getLeader() is None:
         time.sleep(0.5)

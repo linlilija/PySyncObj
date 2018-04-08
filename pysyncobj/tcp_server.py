@@ -12,7 +12,8 @@ class TcpServer(object):
     def __init__(self, poller, host, port, onNewConnection,
                  sendBufferSize = 2 ** 13,
                  recvBufferSize = 2 ** 13,
-                 connectionTimeout = 3.5,):
+                 connectionTimeout = 3.5,
+                 dropRatio = 0.0,):
         self.__poller = poller
         self.__host = host
         self.__port = int(port)
@@ -24,6 +25,7 @@ class TcpServer(object):
         self.__state = SERVER_STATE.UNBINDED
         self.__onNewConnectionCallback = onNewConnection
         self.__connectionTimeout = connectionTimeout
+        self.__dropRatio = dropRatio  # simulate message loss
 
     def bind(self):
         self.__socket = socket.socket(self.__hostAddrType, socket.SOCK_STREAM)
@@ -60,7 +62,8 @@ class TcpServer(object):
                                      socket=sock,
                                      timeout=self.__connectionTimeout,
                                      sendBufferSize=self.__sendBufferSize,
-                                     recvBufferSize=self.__recvBufferSize)
+                                     recvBufferSize=self.__recvBufferSize,
+                                     dropRatio=self.__dropRatio)
                 self.__onNewConnectionCallback(conn)
             except socket.error as e:
                 if e.errno not in (socket.errno.EAGAIN, socket.errno.EWOULDBLOCK):
