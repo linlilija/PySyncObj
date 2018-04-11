@@ -3,8 +3,8 @@ import sys
 import time
 import random
 from collections import defaultdict
-from pysyncobj import SyncObj, replicated, SyncObjConf, FAIL_REASON
 sys.path.append("../")
+from pysyncobj import SyncObj, replicated, SyncObjConf, FAIL_REASON
 
 
 def parseParams(params):
