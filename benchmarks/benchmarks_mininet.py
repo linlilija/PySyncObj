@@ -1,5 +1,6 @@
 from __future__ import print_function
 import sys
+sys.path.append("../")
 import pickle
 from functools import wraps
 from subprocess import Popen, PIPE
@@ -12,7 +13,6 @@ from mininet.util import dumpNodeConnections
 from mininet.log import setLogLevel
 from sys import argv
 from time import sleep
-import matplotlib.pyplot as plt
 
 
 DEVNULL = open(os.devnull, 'wb')
@@ -45,7 +45,7 @@ def singleBenchmark(requestsPerSecond, requestSize, numNodes, quorumSize1, quoru
     """Execute benchmark."""
     rpsPerNode = requestsPerSecond / (numNodes + numNodesReadonly)
     cmd = [sys.executable, 'testobj_delay.py' if delay else 'testobj.py', str(rpsPerNode), str(requestSize),
-           str(quorumSize1), str(quorumSize2), str(drop_ratio)]
+           str(quorumSize1), str(quorumSize2), str(0)]
     processes = []
     allAddrs = []
     for i in range(numNodes):
@@ -108,41 +108,6 @@ def detectMaxRps(requestSize, numNodes, quorumSize1, quorumSize2, IPlist):
     return sorted(results)[len(results) // 2]
 
 
-def measure_RPS_vs_Clustersize(q2=0, drop_ratio=0.0):
-    """Measure max RPS as a function of cluster size."""
-    cluster_size = [i for i in range(3, 8, 2)]
-    rps = []
-    for i in cluster_size:
-        res = detectMaxRps(200, i, i+1-q2, q2, drop_ratio) if q2 != 0 else detectMaxRps(200, i, 0, 0, drop_ratio)
-        print('nodes number: %d, rps: %d' % (i, int(res)))
-        rps.append(res)
-    plt.plot(cluster_size, rps)
-    plt.xlabel("Cluster Size")
-    plt.ylabel("RPS")
-    plt.title("RPS vs Cluster Size")
-    plt.show()
-
-
-def measure_RPS_vs_Requestsize():
-    """Measure max RPS as a function of request size."""
-    request_size = [i for i in range(10, 2100, 500)]
-    rps = []
-    for i in request_size:
-        res = detectMaxRps(i, 3)
-        print('request size: %d, rps: %d' % (i, int(res)))
-        rps.append(res)
-    plt.plot(request_size, rps)
-    plt.xlabel("Request Size")
-    plt.ylabel("RPS")
-    plt.title("RPS vs Request Size")
-    plt.show()
-
-
-def printUsage():
-    print('Usage: %s mode(delay/rps/custom)' % sys.argv[0])
-    sys.exit(-1)
-
-
 class SingleSwitchTopo(Topo):
     """Single switch connected to n hosts."""
     def __init__(self, n=2, drop_ratio=0, lossy=False, **opts):
@@ -185,27 +150,8 @@ def test_flexible_raft(drop_ratio):
 
 if __name__ == '__main__':
 
-    if len(sys.argv) != 2:
-        printUsage()
-
-    mode = sys.argv[1]
-
-    # set quorum size for phase 2: 0 -> normal Raft, >0 -> flexible Raft
-    quorumSize2 = 0
-
     # set message loss rate
     drop_ratio = [0, 0.1, 1, 5]
 
-    if mode == 'delay':
-        print('Average delay:', singleBenchmark(50, 10, 5, delay=True))
-    elif mode == 'rps':
-        for i in drop_ratio:
-            test_flexible_raft(i)
-        # measure_RPS_vs_Clustersize(quorumSize2, drop_ratio)
-        # measure_RPS_vs_Requestsize()
-
-    elif mode == 'custom':
-        singleBenchmark(25000, 10, 3)
-    else:
-        printUsage()
-
+    for i in drop_ratio:
+        test_flexible_raft(i)
