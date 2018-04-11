@@ -1,6 +1,6 @@
 from __future__ import print_function
 import sys
-sys.path.append("../")
+# sys.path.append("../")
 import pickle
 from functools import wraps
 from subprocess import Popen, PIPE
@@ -17,7 +17,7 @@ from time import sleep
 
 DEVNULL = open(os.devnull, 'wb')
 
-START_PORT = 4321
+START_PORT = 8000
 MIN_RPS = 10
 MAX_RPS = 20000
 
@@ -40,39 +40,33 @@ def memoize(fileName):
     return doMemoize
 
 
-def singleBenchmark(requestsPerSecond, requestSize, numNodes, quorumSize1, quorumSize2,
-                    IPlist, numNodesReadonly=0, delay=False):
+def singleBenchmark(requestsPerSecond, requestSize, numNodes, quorumSize1, quorumSize2, host_list):
     """Execute benchmark."""
-    rpsPerNode = requestsPerSecond / (numNodes + numNodesReadonly)
-    cmd = [sys.executable, 'testobj_delay.py' if delay else 'testobj.py', str(rpsPerNode), str(requestSize),
-           str(quorumSize1), str(quorumSize2), str(0)]
+    # Distribute requests to nodes evenly 
+    rpsPerNode = requestsPerSecond // numNodes
+    cmd = [sys.executable, 'testobj.py', str(rpsPerNode), str(requestSize), str(quorumSize1), str(quorumSize2), str(0)]
     processes = []
     allAddrs = []
     for i in range(numNodes):
-        allAddrs.append('%s:%d' % (IPlist[i], START_PORT + i))
+        allAddrs.append('%s:%d' % (host_list[i][0], START_PORT + i))
     for i in range(numNodes):
         addrs = list(allAddrs)
         selfAddr = addrs.pop(i)
-        p = Popen(cmd + [selfAddr] + addrs, stdin=PIPE)
-        processes.append(p)
-    for i in range(numNodesReadonly):
-        p = Popen(cmd + ['readonly'] + allAddrs, stdin=PIPE)
+        c = " ".join(cmd+[selfAddr]+addrs)
+        p = host_list[i][1].popen(c, stdin=PIPE)
         processes.append(p)
     errRates = []
     for p in processes:
         p.communicate()
         errRates.append(float(p.returncode) / 100.0)
     avgRate = sum(errRates) / len(errRates)
-    # print('average success rate:', avgRate)
-    if delay:
-        return avgRate
+    print('average success rate:', avgRate)
     return avgRate >= 0.9
 
-
-def vote(c, requestSize, numNodes, quorumSize1, quorumSize2, IPlist):
+def vote(c, requestSize, numNodes, quorumSize1, quorumSize2, host_list):
     t1 = t2 = 0
     for i in range(3):
-        ret = singleBenchmark(c, requestSize, numNodes, quorumSize1, quorumSize2, IPlist)
+        ret = singleBenchmark(c, requestSize, numNodes, quorumSize1, quorumSize2, host_list)
         if ret:
             t1 += 1
         else:
@@ -80,14 +74,14 @@ def vote(c, requestSize, numNodes, quorumSize1, quorumSize2, IPlist):
     return t1 > t2
 
 
-def doDetectMaxRps(requestSize, numNodes, quorumSize1, quorumSize2, IPlist):
+def doDetectMaxRps(requestSize, numNodes, quorumSize1, quorumSize2, host_list):
     """Measure max RPS with binary search"""
     a = MIN_RPS
     b = MAX_RPS
     numIt = 0
     while b - a > MIN_RPS:
         c = a + (b - a) / 2
-        res = vote(c, requestSize, numNodes, quorumSize1, quorumSize2, IPlist)
+        res = vote(c, requestSize, numNodes, quorumSize1, quorumSize2, host_list)
         if res:
             a = c
         else:
@@ -98,11 +92,11 @@ def doDetectMaxRps(requestSize, numNodes, quorumSize1, quorumSize2, IPlist):
 
 
 # @memoize('maxRpsCache.bin')
-def detectMaxRps(requestSize, numNodes, quorumSize1, quorumSize2, IPlist):
+def detectMaxRps(requestSize, numNodes, quorumSize1, quorumSize2, host_list):
     """Measure max RPS three times and use median as result."""
     results = []
     for i in range(0, 1):
-        res = doDetectMaxRps(requestSize, numNodes, quorumSize1, quorumSize2, IPlist)
+        res = doDetectMaxRps(requestSize, numNodes, quorumSize1, quorumSize2, host_list)
         print('iteration %d, current max %d' % (i, res))
         results.append(res)
     return sorted(results)[len(results) // 2]
@@ -128,15 +122,15 @@ def test_flexible_raft(drop_ratio):
         """Create network"""
         topo = SingleSwitchTopo(i, drop_ratio)
         net = Mininet(topo=topo, host=CPULimitedHost, link=TCLink, autoStaticArp=True)
-        IPlist = []
+        host_list = []
         for j in range(i):
-            IPlist.append(net.hosts[j].IP())
+            host_list.append((net.hosts[j].IP(), net.get('h'+str(j+1))))
         net.start()
 
         """Measure performance"""
         rps = []
         for j in range(0, 4):
-            res = detectMaxRps(200, i, i + 1 - j, j, IPlist) if j != 0 else detectMaxRps(200, i, 0, 0, IPlist)
+            res = detectMaxRps(200, i, i + 1 - j, j, host_list) if j != 0 else detectMaxRps(200, i, 0, 0, host_list)
             rps.append(res)
 
         """Record data"""
@@ -149,7 +143,7 @@ def test_flexible_raft(drop_ratio):
 
 
 if __name__ == '__main__':
-
+    setLogLevel( 'info' )
     # set message loss rate
     drop_ratio = [0, 0.1, 1, 5]
 

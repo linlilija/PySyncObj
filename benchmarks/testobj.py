@@ -53,7 +53,6 @@ if __name__ == '__main__':
 
     # Parse parameters
     numCommands, cmdSize, quorumSize1, quorumSize2, drop_ratio, selfAddr, partners = parseParams(sys.argv)
-
     maxCommandsQueueSize = int(0.9 * SyncObjConf().commandsQueueSize / len(partners))
 
     # Init a TestObj
@@ -62,12 +61,11 @@ if __name__ == '__main__':
     while obj._getLeader() is None:
         time.sleep(0.5)
 
-    # Discard the first 10s
-    time.sleep(5.0)
+    time.sleep(4.0)
 
     # Measure the system during its steady state
     startTime = time.time()
-    while time.time() - startTime < 25.0:
+    while time.time() - startTime < 10.0:
         st = time.time()
         for i in range(0, numCommands):
             obj.testMethod(getRandStr(cmdSize), callback=clbck)
@@ -78,7 +76,7 @@ if __name__ == '__main__':
         else:
             time.sleep(1.0 - delta)
 
-    time.sleep(5.0)
+    time.sleep(1.0)
 
     successRate = float(_g_success) / float(_g_sent)
     # print('SUCCESS RATE:', successRate)
