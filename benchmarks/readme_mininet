@@ -1,0 +1,12 @@
+Install:
+git clone git://github.com/mininet/mininet
+mininet/util/install.sh -a
+
+Test basic functionality:
+sudo mn --test pingall
+
+Run Raft benchmark:(mininet must be run in root mode)
+sudo python benchmarks_mininet.py
+
+Cleanup:
+sudo mn -c

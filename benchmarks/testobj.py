@@ -61,7 +61,7 @@ if __name__ == '__main__':
     while obj._getLeader() is None:
         time.sleep(0.5)
 
-    time.sleep(4.0)
+    time.sleep(2.0)
 
     # Measure the system during its steady state
     startTime = time.time()

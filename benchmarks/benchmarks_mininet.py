@@ -19,7 +19,7 @@ DEVNULL = open(os.devnull, 'wb')
 
 START_PORT = 8000
 MIN_RPS = 10
-MAX_RPS = 20000
+MAX_RPS = 40000
 
 
 def memoize(fileName):
@@ -60,7 +60,7 @@ def singleBenchmark(requestsPerSecond, requestSize, numNodes, quorumSize1, quoru
         p.communicate()
         errRates.append(float(p.returncode) / 100.0)
     avgRate = sum(errRates) / len(errRates)
-    print('average success rate:', avgRate)
+    # print('average success rate:', avgRate)
     return avgRate >= 0.9
 
 def vote(c, requestSize, numNodes, quorumSize1, quorumSize2, host_list):
@@ -110,8 +110,8 @@ class SingleSwitchTopo(Topo):
         for h in range(n):
             # Each host gets 50%/n of system CPU
             host = self.addHost('h%s' % (h + 1), cpu=.9 / n)
-            # 10 Mbps, 5ms delay, no packet loss
-            self.addLink(host, switch, bw=10, delay='5ms', loss=drop_ratio, use_htb=True)
+            # 100 Mbps, 5ms delay, no packet loss
+            self.addLink(host, switch, bw=100, delay='5ms', loss=drop_ratio, use_htb=True)
 
 
 def test_flexible_raft(drop_ratio):
@@ -141,10 +141,10 @@ def test_flexible_raft(drop_ratio):
             f.write("RPS with cluster size = %d & drop ratio = %f\n" % (i, drop_ratio))
             f.write(str(rps))
 
-
 if __name__ == '__main__':
     setLogLevel( 'info' )
-    # set message loss rate
+
+    # set message loss rate %
     drop_ratio = [0, 0.1, 1, 5]
 
     for i in drop_ratio:
