@@ -13,6 +13,8 @@ from mininet.util import dumpNodeConnections
 from mininet.log import setLogLevel
 from sys import argv
 from time import sleep
+import random
+import math
 
 
 DEVNULL = open(os.devnull, 'wb')
@@ -104,17 +106,23 @@ def detectMaxRps(requestSize, numNodes, quorumSize1, quorumSize2, host_list):
 
 class SingleSwitchTopo(Topo):
     """Single switch connected to n hosts."""
-    def __init__(self, n=2, drop_ratio=0, lossy=False, **opts):
+    def __init__(self, n=2, drop_ratio=0, delayMin=0.0, delayAvg=0.0, delayStddev=0.0, lossy=False, **opts):
         Topo.__init__(self, **opts)
+        self.__delayMin = math.ceil(delayMin)
+        self.__delayAvg = delayAvg
+        self.__delayStddev = delayStddev
         switch = self.addSwitch('s1')
-        for h in range(1):
-            # Each host gets 50%/n of system CPU
+
+        for h in range(n):
+            randDelay = str(self.__getRandomDelay()) + 'ms'
             host = self.addHost('h%s' % (h + 1), cpu=.9 / n)
-            # 100 Mbps, 5ms delay, no packet loss
-            self.addLink(host, switch, bw=100, delay='1ms', loss=drop_ratio, use_htb=True)
- 	for h in range(1, n):
-	    host = self.addHost('h%s' % (h + 1), cpu=.9 / n)
-	    self.addLink(host, switch, bw=100, delay='100ms', loss=drop_ratio, use_htb=True)
+            self.addLink(host, switch, bw=100, delay=randDelay, loss=drop_ratio, use_htb=True)
+
+    def __getRandomDelay(self):
+        delay = math.ceil(random.gauss(self.__delayAvg, self.__delayStddev))
+        if delay < self.__delayMin:
+            return self.__delayMin
+        return delay
 
 
 def test_flexible_raft(drop_ratio):
@@ -123,7 +131,7 @@ def test_flexible_raft(drop_ratio):
     # test different phase 2 quorum size
     for i in cluster_size:
         """Create network"""
-        topo = SingleSwitchTopo(i, drop_ratio)
+        topo = SingleSwitchTopo(i, drop_ratio, 13.640, 20.822, 24.018)
         net = Mininet(topo=topo, host=CPULimitedHost, link=TCLink, autoStaticArp=True)
         host_list = []
         for j in range(i):
