@@ -129,9 +129,12 @@ def test_flexible_raft(drop_ratio):
     """Measure RPS vs cluster size of flexible Raft"""
     cluster_size = [i for i in range(3, 8, 2)]
     # test different phase 2 quorum size
+    delayMin = 13.640
+    delayAvg = 20.822
+    delayStddev = 24.018
     for i in cluster_size:
         """Create network"""
-        topo = SingleSwitchTopo(i, drop_ratio, 13.640, 20.822, 24.018)
+        topo = SingleSwitchTopo(i, drop_ratio, delayMin, delayAvg, delayStddev)
         net = Mininet(topo=topo, host=CPULimitedHost, link=TCLink, autoStaticArp=True)
         host_list = []
         for j in range(i):
