@@ -107,16 +107,19 @@ class SingleSwitchTopo(Topo):
     def __init__(self, n=2, drop_ratio=0, lossy=False, **opts):
         Topo.__init__(self, **opts)
         switch = self.addSwitch('s1')
-        for h in range(n):
+        for h in range(1):
             # Each host gets 50%/n of system CPU
             host = self.addHost('h%s' % (h + 1), cpu=.9 / n)
             # 100 Mbps, 5ms delay, no packet loss
-            self.addLink(host, switch, bw=100, delay='5ms', loss=drop_ratio, use_htb=True)
+            self.addLink(host, switch, bw=100, delay='1ms', loss=drop_ratio, use_htb=True)
+ 	for h in range(1, n):
+	    host = self.addHost('h%s' % (h + 1), cpu=.9 / n)
+	    self.addLink(host, switch, bw=100, delay='100ms', loss=drop_ratio, use_htb=True)
 
 
 def test_flexible_raft(drop_ratio):
     """Measure RPS vs cluster size of flexible Raft"""
-    cluster_size = [i for i in range(3, 10, 2)]
+    cluster_size = [i for i in range(3, 8, 2)]
     # test different phase 2 quorum size
     for i in cluster_size:
         """Create network"""
@@ -129,7 +132,7 @@ def test_flexible_raft(drop_ratio):
 
         """Measure performance"""
         rps = []
-        for j in range(0, 4):
+        for j in range(0, min(i//2+1,4)):
             res = detectMaxRps(200, i, i + 1 - j, j, host_list) if j != 0 else detectMaxRps(200, i, 0, 0, host_list)
             rps.append(res)
 
@@ -139,13 +142,14 @@ def test_flexible_raft(drop_ratio):
         filename = "result_%d_%f" % (i, drop_ratio)
         with open(filename, 'a') as f:
             f.write("RPS with cluster size = %d & drop ratio = %f\n" % (i, drop_ratio))
-            f.write(str(rps))
+            f.write(str(rps)+"\n")
 
 if __name__ == '__main__':
-    setLogLevel( 'info' )
+#    setLogLevel( 'info' )
 
     # set message loss rate %
-    drop_ratio = [0, 0.1, 1, 5]
+    drop_ratio = [0]
+    # drop_ratio = [0, 0.1, 1, 10]
 
     for i in drop_ratio:
         test_flexible_raft(i)
