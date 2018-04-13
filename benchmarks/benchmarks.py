@@ -135,24 +135,30 @@ def measure_RPS_vs_Requestsize():
 
 def test_flexible_raft(drop_ratio):
     """Measure RPS vs cluster size of flexible Raft"""
-    color_list = ['red', 'green', 'blue', 'orange']
-    cluster_size = [i for i in range(3, 10, 2)]
-    # test different phase 2 quorum size
-    for j in range(0, 4):
+    cluster_size = [i for i in range(3, 8, 2)]
+    for i in cluster_size:
         rps = []
-        for i in cluster_size:
+        for j in range(0, min(i//2+1, 4)):
             res = detectMaxRps(200, i, i + 1 - j, j, drop_ratio) if j != 0 else detectMaxRps(200, i, 0, 0, drop_ratio)
             rps.append(res)
-        # plt.plot(cluster_size, rps, color=color_list[j], label=("q2=%d" % j))
-        filename = "result_%d_%f" % (j, drop_ratio)
+        filename = "result_%d_%f" % (i, drop_ratio)
         with open(filename, 'a') as f:
-            f.write("RPS with quorum size = %d & drop ratio = %f" % (j, drop_ratio))
+            f.write("RPS with cluster size = %d & drop ratio = %f" % (i, drop_ratio))
             f.write(str(rps))
-    # plt.xlabel("Cluster Size")
-    # plt.ylabel("RPS")
-    # plt.title("RPS vs Cluster Size")
-    # plt.legend()
-    # plt.show()
+
+
+def test_flexible_raft_delay(drop_ratio):
+    """Measure delay vs cluster size of flexible Raft"""
+    cluster_size = [i for i in range(3, 8, 2)]
+    for i in cluster_size:
+        delay = []
+        for j in range(0, min(i//2+1, 4)):
+            res = singleBenchmark(50, 10, i, i+1-j, j, drop_ratio, 0, delay=True) if j != 0 else singleBenchmark(50, 10, i, 0, 0, drop_ratio, 0, delay=True)
+            delay.append(res)
+        filename = "result_%d_%f" % (i, drop_ratio)
+        with open(filename, 'a') as f:
+            f.write("Delay with cluster size = %d & drop ratio = %f\n" % (i, drop_ratio))
+            f.write(str(delay)+"\n")
 
 
 if __name__ == '__main__':
@@ -169,10 +175,11 @@ if __name__ == '__main__':
     drop_ratio = [-1, 0.01, 0.05]
 
     if mode == 'delay':
-        print('Average delay:', singleBenchmark(50, 10, 5, delay=True))
+        for r in drop_ratio:
+            test_flexible_raft_delay(r)
     elif mode == 'rps':
-        for i in range(3):
-            test_flexible_raft(drop_ratio[i])
+        for r in drop_ratio:
+            test_flexible_raft(r)
         # measure_RPS_vs_Clustersize(quorumSize2, drop_ratio)
         # measure_RPS_vs_Requestsize()
 

@@ -6,13 +6,22 @@ from collections import defaultdict
 sys.path.append("../")
 from pysyncobj import SyncObj, replicated, SyncObjConf, FAIL_REASON
 
+
+def parseParams(params):
+    """Parse command line parameters."""
+    if len(params) < 8:
+        print('Usage: %s RPS requestSize quorumSize1 quorumSize2 selfHost:port partner1Host:port partner2Host:port ...' % sys.argv[0])
+        sys.exit(-1)
+    return int(float(params[1])), int(params[2]), int(params[3]), int(params[4]), float(params[5]), (params[6] if params[6] != 'readonly' else None), params[7:]
+
+
 class TestObj(SyncObj):
 
-    def __init__(self, selfNodeAddr, otherNodeAddrs):
+    def __init__(self, selfNodeAddr, otherNodeAddrs, quorumSize1=0, quorumSize2=0, drop_ratio=0.0):
         cfg = SyncObjConf(
             appendEntriesUseBatch=False,
         )
-        super(TestObj, self).__init__(selfNodeAddr, otherNodeAddrs, cfg)
+        super(TestObj, self).__init__(selfNodeAddr, otherNodeAddrs, quorumSize1, quorumSize2, drop_ratio, cfg)
         self.__appliedCommands = 0
 
     @replicated
@@ -45,21 +54,12 @@ def getRandStr(l):
     return f % random.randrange(16 ** l)
 
 if __name__ == '__main__':
-    if len(sys.argv) < 5:
-        print('Usage: %s RPS requestSize selfHost:port partner1Host:port partner2Host:port ...' % sys.argv[0])
-        sys.exit(-1)
-
-    numCommands = int(float(sys.argv[1]))
-    cmdSize = int(sys.argv[2])
-
-    selfAddr = sys.argv[3]
-    if selfAddr == 'readonly':
-        selfAddr = None
-    partners = sys.argv[4:]
-
+    # Parse parameters
+    numCommands, cmdSize, quorumSize1, quorumSize2, drop_ratio, selfAddr, partners = parseParams(sys.argv)
     maxCommandsQueueSize = int(0.9 * SyncObjConf().commandsQueueSize / len(partners))
 
-    obj = TestObj(selfAddr, partners)
+    # Init a TestObj
+    obj = TestObj(selfAddr, partners, quorumSize1, quorumSize2, drop_ratio)
 
     while obj._getLeader() is None:
         time.sleep(0.5)
