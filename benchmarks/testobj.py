@@ -95,8 +95,8 @@ if __name__ == '__main__':
     for i in range(len(start_time)):
         time_diff += (end_time[i] - start_time[i])
 
-    filename = 'latency_{}_{}'.format(numCommands, quorumSize2)
+    filename = 'latency_{}_{}'.format(numCommands, len(partners))
     with open(filename, 'a') as f:
-        f.write(json.dumps(time_diff))
+        f.write(json.dumps({quorumSize2: time_diff}))
 
     sys.exit(int(successRate * 100))
