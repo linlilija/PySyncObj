@@ -41,6 +41,7 @@ def singleBenchmark(numNodes, quorumSize1=0, quorumSize2=0, drop_ratio=0.0, numN
     num_success = []
     for p in processes:
         p.communicate()
+        num_success.append(p.returncode)
     print(num_success)
     avgRPS = sum(num_success) / 50.0
     print('average RPS:', avgRPS)
