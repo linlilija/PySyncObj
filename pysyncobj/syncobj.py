@@ -139,7 +139,7 @@ class SyncObj(object):
         self.__votesCount = 0
         self.__raftLeader = None
         self.__raftElectionDeadline = time.time() + self.__generateRaftTimeout()
-        self.__raftLog = createJournal(self.__conf.journalFile)
+        self.__raftLog = createJournal(self.__conf.journalFile)  # format: (command, index, term)
         if len(self.__raftLog) == 0:
             self.__raftLog.add(_bchr(_COMMAND_TYPE.NO_OP), 1, self.__raftCurrentTerm)
         self.__raftCommitIndex = 1
@@ -535,7 +535,7 @@ class SyncObj(object):
 
         if self.__raftState in (_RAFT_STATE.FOLLOWER, _RAFT_STATE.CANDIDATE) and self.__selfNodeAddr is not None:
             if self.__raftElectionDeadline < time.time() and self.__connectedToAnyone():
-                self.__raftElectionDeadline = time.time() + self.__generateRaftTimeout()
+                self.__raftElectionDeadline = time.time() + self.__generateRaftTimeout()  # timeout: become candidate
                 self.__raftLeader = None
                 self.__setState(_RAFT_STATE.CANDIDATE)
                 self.__raftCurrentTerm += 1
@@ -548,15 +548,15 @@ class SyncObj(object):
                         'last_log_index': self.__getCurrentLogIndex(),
                         'last_log_term': self.__getCurrentLogTerm(),
                     })
-                self.__onLeaderChanged()
+                self.__onLeaderChanged()  # discard queueing commands
                 if self.__votesCount >= self.__quorumSize1:
                     self.__onBecomeLeader()
 
         if self.__raftState == _RAFT_STATE.LEADER:
-            while self.__raftCommitIndex < self.__getCurrentLogIndex():
+            while self.__raftCommitIndex < self.__getCurrentLogIndex():  # commit commands if possible
                 nextCommitIndex = self.__raftCommitIndex + 1
                 count = 1
-                for node in self.__nodes:
+                for node in self.__nodes:  # check if command is received by majority
                     if self.__raftMatchIndex[node.getAddress()] >= nextCommitIndex:
                         count += 1
                 if count >= self.__quorumSize2:
@@ -575,7 +575,7 @@ class SyncObj(object):
 
         needSendAppendEntries = False
 
-        if self.__raftCommitIndex > self.__raftLastApplied:
+        if self.__raftCommitIndex > self.__raftLastApplied:  # apply command if possible
             count = self.__raftCommitIndex - self.__raftLastApplied
             entries = self.__getEntries(self.__raftLastApplied + 1, count)
             for entry in entries:
@@ -587,18 +587,17 @@ class SyncObj(object):
                         if subscribeTermID == currentTermID:
                             callback(res, FAIL_REASON.SUCCESS)
                         else:
-                            callback(None, FAIL_REASON.DISCARDED)
+                            callback(None, FAIL_REASON.DISCARDED)  # discard command received in other terms
 
                     self.__raftLastApplied += 1
                 except SyncObjExceptionWrongVer as e:
                     logging.error('request to switch to unsupported code version (self version: %d, requested version: %d)' %
                         (self.__selfCodeVersion, e.ver))
 
-
             if not self.__conf.appendEntriesUseBatch:
                 needSendAppendEntries = True
 
-        if self.__raftState == _RAFT_STATE.LEADER:
+        if self.__raftState == _RAFT_STATE.LEADER:  # ask followers to append entries or send heartbeats
             if time.time() > self.__newAppendEntriesTime or needSendAppendEntries:
                 self.__sendAppendEntries()
 
@@ -722,12 +721,12 @@ class SyncObj(object):
                 lastLogTerm = message['last_log_term']
                 lastLogIdx = message['last_log_index']
                 if message['term'] >= self.__raftCurrentTerm:
-                    if lastLogTerm < self.__getCurrentLogTerm():
+                    if lastLogTerm < self.__getCurrentLogTerm():  # candidate's log is not as up-to-date as receiver's log
                         return
                     if lastLogTerm == self.__getCurrentLogTerm() and \
                             lastLogIdx < self.__getCurrentLogIndex():
                         return
-                    if self.__votedFor is not None:
+                    if self.__votedFor is not None:  # can vote for one candidate per term
                         return
 
                     self.__votedFor = nodeAddr
@@ -754,7 +753,7 @@ class SyncObj(object):
             # Regular append entries
             if 'prevLogIdx' in message:
                 transmission = message.get('transmission', None)
-                if transmission is not None:
+                if transmission is not None:  # entries are transmitted in multiple packets
                     if transmission == 'start':
                         self.__recvTransmission = message['data']
                         self.__sendNextNodeIdx(nodeAddr, success=False, reset=False)
@@ -788,7 +787,7 @@ class SyncObj(object):
                                 self.__doChangeCluster(clusterChangeRequest, reverse=True)
 
                     self.__deleteEntriesFrom(prevLogIdx + 1)
-                for entry in newEntries:
+                for entry in newEntries:  # append entries
                     self.__raftLog.add(*entry)
 
                 # apply cluster changes
@@ -838,7 +837,7 @@ class SyncObj(object):
                 if self.__votesCount >= self.__quorumSize1:
                     self.__onBecomeLeader()
 
-        if self.__raftState == _RAFT_STATE.LEADER:
+        if self.__raftState == _RAFT_STATE.LEADER:  # receive reply for "append_entries"
             if message['type'] == 'next_node_idx':
                 reset = message['reset']
                 nextNodeIdx = message['next_node_idx']
@@ -1095,11 +1094,11 @@ class SyncObj(object):
                 if nextNodeIndex > self.__raftLog[0][1]:
                     prevLogIdx, prevLogTerm = self.__getPrevLogIndexTerm(nextNodeIndex)
                     entries = []
-                    if nextNodeIndex <= self.__getCurrentLogIndex():
+                    if nextNodeIndex <= self.__getCurrentLogIndex():  # have entries to append
                         entries = self.__getEntries(nextNodeIndex, None, batchSizeBytes)
                         self.__raftNextIndex[nodeAddr] = entries[-1][1] + 1
 
-                    if len(entries) == 1 and len(entries[0][0]) >= batchSizeBytes:
+                    if len(entries) == 1 and len(entries[0][0]) >= batchSizeBytes:  # command is too large
                         entry = pickle.dumps(entries[0])
                         for pos in xrange(0, len(entry), batchSizeBytes):
                             currData = entry[pos:pos + batchSizeBytes]
@@ -1119,7 +1118,7 @@ class SyncObj(object):
                                 'prevLogTerm': prevLogTerm,
                             }
                             node.send(message)
-                    else:
+                    else:  # normal append or heartbeat
                         message = {
                             'type': 'append_entries',
                             'term': self.__raftCurrentTerm,
