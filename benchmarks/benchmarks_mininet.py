@@ -15,6 +15,8 @@ from sys import argv
 from time import sleep
 import random
 import math
+import time
+import json
 
 
 DEVNULL = open(os.devnull, 'wb')
@@ -132,6 +134,7 @@ def test_flexible_raft(drop_ratio):
     delayMin = 13.640
     delayAvg = 20.822
     delayStddev = 24.018
+    fixedRps = 3500
     for i in cluster_size:
         """Create network"""
         topo = SingleSwitchTopo(i, drop_ratio, delayMin, delayAvg, delayStddev)
@@ -142,18 +145,31 @@ def test_flexible_raft(drop_ratio):
         net.start()
 
         """Measure performance"""
-        rps = []
-        for j in range(0, min(i//2+1,4)):
-            res = detectMaxRps(200, i, i + 1 - j, j, host_list) if j != 0 else detectMaxRps(200, i, 0, 0, host_list)
-            rps.append(res)
+        # rps = []
+        latencies = {}
+        for j in range(0, min(i // 2 + 1, 4)):
+            # res = detectMaxRps(200, i, i + 1 - j, j, host_list) if j != 0 else detectMaxRps(200, i, 0, 0, host_list)
+            count = 0
+            latency = []
+            while count < 3:
+                start = time.time()
+                if singleBenchmark(fixedRps, 200, i, i + 1 - j, j, host_list) if j != 0 else singleBenchmark(fixedRps, 200, i, 0, 0, host_list):
+                    end = time.time()
+                    latency.append(end - start)
+                    count += 1
+            # rps.append(res)
+            latencies[j] = latency
 
         """Record data"""
         sleep(1)
         net.stop()
-        filename = "result_%d_%f" % (i, drop_ratio)
+        filename = 'latency_{}_{}.json'.format(i, fixedRps)
         with open(filename, 'a') as f:
-            f.write("RPS with cluster size = %d & drop ratio = %f\n" % (i, drop_ratio))
-            f.write(str(rps)+"\n")
+            f.write(json.dumps(latencies))
+        # filename = "result_%d_%f" % (i, drop_ratio)
+        # with open(filename, 'a') as f:
+        #     f.write("RPS with cluster size = %d & drop ratio = %f\n" % (i, drop_ratio))
+        #     f.write(str(rps)+"\n")
 
 if __name__ == '__main__':
 #    setLogLevel( 'info' )
