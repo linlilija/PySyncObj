@@ -116,9 +116,9 @@ class SingleSwitchTopo(Topo):
         switch = self.addSwitch('s1')
 
         for h in range(n):
-            randDelay = str(self.__getRandomDelay()) + 'ms'
+            # randDelay = str(self.__getRandomDelay()) + 'ms'
             host = self.addHost('h%s' % (h + 1), cpu=.9 / n)
-            self.addLink(host, switch, bw=100, delay=randDelay, loss=drop_ratio, use_htb=True)
+            self.addLink(host, switch, bw=100, delay='5ms', loss=drop_ratio, use_htb=True)
 
     def __getRandomDelay(self):
         delay = math.ceil(random.gauss(self.__delayAvg, self.__delayStddev))
@@ -134,10 +134,11 @@ def test_flexible_raft(drop_ratio):
     delayMin = 13.640
     delayAvg = 20.822
     delayStddev = 24.018
-    fixedRps = 3500
+    fixedRps = 2000
     for i in cluster_size:
         """Create network"""
-        topo = SingleSwitchTopo(i, drop_ratio, delayMin, delayAvg, delayStddev)
+        # topo = SingleSwitchTopo(i, drop_ratio, delayMin, delayAvg, delayStddev)
+        topo = SingleSwitchTopo(i)
         net = Mininet(topo=topo, host=CPULimitedHost, link=TCLink, autoStaticArp=True)
         host_list = []
         for j in range(i):
@@ -146,26 +147,27 @@ def test_flexible_raft(drop_ratio):
 
         """Measure performance"""
         # rps = []
-        latencies = {}
+        # latencies = {}
         for j in range(0, min(i // 2 + 1, 4)):
             # res = detectMaxRps(200, i, i + 1 - j, j, host_list) if j != 0 else detectMaxRps(200, i, 0, 0, host_list)
-            count = 0
-            latency = []
-            while count < 3:
-                start = time.time()
-                if singleBenchmark(fixedRps, 200, i, i + 1 - j, j, host_list) if j != 0 else singleBenchmark(fixedRps, 200, i, 0, 0, host_list):
-                    end = time.time()
-                    latency.append(end - start)
-                    count += 1
+            singleBenchmark(fixedRps, 200, i, i + 1 - j, j, host_list) if j != 0 else singleBenchmark(fixedRps, 200, i, 0, 0, host_list)
+            # count = 0
+            # latency = []
+            # while count < 3:
+            #     start = time.time()
+            #     if singleBenchmark(fixedRps, 200, i, i + 1 - j, j, host_list) if j != 0 else singleBenchmark(fixedRps, 200, i, 0, 0, host_list):
+            #         end = time.time()
+            #         latency.append(end - start)
+            #         count += 1
             # rps.append(res)
-            latencies[j] = latency
+            # latencies[j] = latency
 
         """Record data"""
-        sleep(1)
+        # sleep(1)
         net.stop()
-        filename = 'latency_{}_{}.json'.format(i, fixedRps)
-        with open(filename, 'a') as f:
-            f.write(json.dumps(latencies))
+        # filename = 'latency_{}_{}.json'.format(i, fixedRps)
+        # with open(filename, 'a') as f:
+        #     f.write(json.dumps(latencies))
         # filename = "result_%d_%f" % (i, drop_ratio)
         # with open(filename, 'a') as f:
         #     f.write("RPS with cluster size = %d & drop ratio = %f\n" % (i, drop_ratio))
