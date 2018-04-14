@@ -2,6 +2,7 @@ from __future__ import print_function
 import sys
 import time
 import random
+import json
 from collections import defaultdict
 sys.path.append("../")
 from pysyncobj import SyncObj, replicated, SyncObjConf, FAIL_REASON
@@ -33,10 +34,13 @@ _g_sent = 0
 _g_success = 0
 _g_error = 0
 _g_errors = defaultdict(int)
-
+start_time = []
+end_time = []
 
 def clbck(res, err):
     global _g_error, _g_success
+    global end_time
+    end_time.append(time.time())
     if err == FAIL_REASON.SUCCESS:
         _g_success += 1
     else:
@@ -70,6 +74,7 @@ if __name__ == '__main__':
         for i in range(0, numCommands):
             obj.testMethod(getRandStr(cmdSize), callback=clbck)
             _g_sent += 1
+            start_time.append(time.time())
         delta = time.time() - st
         if delta > 1.0:
             sys.exit(0)
@@ -86,5 +91,12 @@ if __name__ == '__main__':
     #     print('ERRORS STATS: %d' % len(_g_errors))
     #     for err in _g_errors:
     #         print(err, float(_g_errors[err]) / float(_g_error))
+    time_diff = 0
+    for i in range(len(start_time)):
+        time_diff += (end_time[i] - start_time[i])
+
+    filename = 'latency_{}_{}'.format(numCommands, quorumSize2)
+    with open(filename, 'a') as f:
+        f.write(json.dumps(time_diff))
 
     sys.exit(int(successRate * 100))
