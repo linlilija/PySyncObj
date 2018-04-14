@@ -29,18 +29,18 @@ def singleBenchmark(numNodes, quorumSize1=0, quorumSize2=0, drop_ratio=0.0, numN
         p.communicate()
         num_success.append(p.returncode)
     print(num_success)
-    avgRPS = sum(num_success) / 30.0
+    avgRPS = sum(num_success) / 50.0
     print('average RPS:', avgRPS)
     return avgRPS
 
 
 def test_flexible_raft(drop_ratio):
     """Measure RPS vs cluster size of flexible Raft"""
-    cluster_size = [i for i in range(3, 8, 2)]
+    cluster_size = [i for i in range(3, 10, 2)]
     for i in cluster_size:
         rps = []
         for j in range(0, min(i//2+1, 4)):
-            res = singleBenchmark(i, i + 1 - j, j, drop_ratio) if j != 0 else singleBenchmark(i, 0, 0, drop_ratio)
+            res = singleBenchmark(i, i + 1 - j, j, drop_ratio, 10-i) if j != 0 else singleBenchmark(i, 0, 0, drop_ratio, 10-i)
             rps.append(res)
         filename = "result_%d_%f" % (i, drop_ratio)
         with open(filename, 'a') as f:

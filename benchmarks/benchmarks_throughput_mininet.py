@@ -41,9 +41,8 @@ def singleBenchmark(numNodes, quorumSize1=0, quorumSize2=0, drop_ratio=0.0, numN
     num_success = []
     for p in processes:
         p.communicate()
-        num_success.append(p.returncode)
     print(num_success)
-    avgRPS = sum(num_success) / 30.0
+    avgRPS = sum(num_success) / 50.0
     print('average RPS:', avgRPS)
     return avgRPS
 
@@ -74,7 +73,7 @@ def test_flexible_raft(drop_ratio):
     delayMin = 13.640
     delayAvg = 20.822
     delayStddev = 24.018
-    cluster_size = [i for i in range(3, 8, 2)]
+    cluster_size = [i for i in range(3, 10, 2)]
 
     for i in cluster_size:
         """Create network"""
@@ -88,7 +87,7 @@ def test_flexible_raft(drop_ratio):
         """Measure performance"""
         rps = []
         for j in range(0, min(i//2+1, 4)):
-            res = singleBenchmark(i, i + 1 - j, j, drop_ratio) if j != 0 else singleBenchmark(i, 0, 0, drop_ratio)
+            res = singleBenchmark(i, i + 1 - j, j, drop_ratio, 10-i) if j != 0 else singleBenchmark(i, 0, 0, drop_ratio, 10-i)
             rps.append(res)
 
         """Record data"""

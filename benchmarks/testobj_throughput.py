@@ -34,7 +34,7 @@ def measure(argv):
     startTime = time.time()
     while time.time() - startTime < 10.0:
         counter1.inc(sync=True)
-    while time.time() - startTime < 40.0:
+    while time.time() - startTime < 60.0:
         counter1.inc(sync=True)
         count += 1
     while time.time() - startTime < 5.0:
