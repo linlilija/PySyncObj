@@ -1061,7 +1061,6 @@ class SyncObj(object):
                 for node in self.__serverDelay:
                     if self.__serverDelay[node] < minDelay:
                         minDelay, nodeAddr = self.__serverDelay[node], node
-                print(self.__serverDelay)
                 self.__committee.add(nodeAddr)
                 self.__serverDelay.pop(nodeAddr)
 

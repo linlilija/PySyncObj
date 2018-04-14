@@ -135,10 +135,10 @@ def measure_RPS_vs_Requestsize():
 
 def test_flexible_raft(drop_ratio):
     """Measure RPS vs cluster size of flexible Raft"""
-    cluster_size = [i for i in range(5, 8, 2)]
+    cluster_size = [i for i in range(3, 8, 2)]
     for i in cluster_size:
         rps = []
-        for j in range(1, min(i//2+1, 4)):
+        for j in range(0, min(i//2+1, 4)):
             res = detectMaxRps(200, i, i + 1 - j, j, drop_ratio) if j != 0 else detectMaxRps(200, i, 0, 0, drop_ratio)
             rps.append(res)
         filename = "result_%d_%f" % (i, drop_ratio)
