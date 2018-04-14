@@ -19,9 +19,9 @@ import math
 
 DEVNULL = open(os.devnull, 'wb')
 
-START_PORT = 8000
+START_PORT = 4321
 MIN_RPS = 10
-MAX_RPS = 40000
+MAX_RPS = 20000
 
 
 def memoize(fileName):
@@ -116,7 +116,7 @@ class SingleSwitchTopo(Topo):
         for h in range(n):
             randDelay = str(self.__getRandomDelay()) + 'ms'
             host = self.addHost('h%s' % (h + 1), cpu=.9 / n)
-            self.addLink(host, switch, bw=100, delay=randDelay, loss=drop_ratio, use_htb=True)
+            self.addLink(host, switch, bw=10, delay=randDelay, loss=drop_ratio, use_htb=True)
 
     def __getRandomDelay(self):
         delay = math.ceil(random.gauss(self.__delayAvg, self.__delayStddev))
@@ -143,7 +143,7 @@ def test_flexible_raft(drop_ratio):
 
         """Measure performance"""
         rps = []
-        for j in range(0, min(i//2+1,4)):
+        for j in range(0, min(i//2+1, 4)):
             res = detectMaxRps(200, i, i + 1 - j, j, host_list) if j != 0 else detectMaxRps(200, i, 0, 0, host_list)
             rps.append(res)
 
@@ -155,12 +155,12 @@ def test_flexible_raft(drop_ratio):
             f.write("RPS with cluster size = %d & drop ratio = %f\n" % (i, drop_ratio))
             f.write(str(rps)+"\n")
 
+
 if __name__ == '__main__':
 #    setLogLevel( 'info' )
 
     # set message loss rate %
-    drop_ratio = [0]
-    # drop_ratio = [0, 0.1, 1, 10]
+    drop_ratio = [0, 0.1, 1]
 
     for i in drop_ratio:
         test_flexible_raft(i)

@@ -182,9 +182,9 @@ class TcpConnection(object):
             return False
         try:
             # simulate message loss
-            if random.random() < self.__dropRatio:
-                time.sleep(0.2)
-                return True
+            # if random.random() < self.__dropRatio:
+            #     time.sleep(0.2)
+            #     return True
             res = self.__socket.send(self.__writeBuffer)
             if res < 0:
                 self.disconnect()

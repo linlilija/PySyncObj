@@ -159,6 +159,9 @@ class SyncObj(object):
         self.__quorumSize1 = quorumSize1  # flexible quorum size
         self.__quorumSize2 = quorumSize2
         self.__dropRatio = dropRatio  # simulate message loss
+        self.__isFlexible = True if self.__quorumSize2 != 0 else False
+        self.__committee = set()
+        self.__serverDelay = {}
 
         self.__startTime = time.time()
         globalDnsResolver().setTimeouts(self.__conf.dnsCacheTime, self.__conf.dnsFailCacheTime)
@@ -541,6 +544,7 @@ class SyncObj(object):
                 self.__raftCurrentTerm += 1
                 self.__votedFor = self._getSelfNodeAddr()
                 self.__votesCount = 1
+                self.__serverDelay = {}
                 for node in self.__nodes:
                     node.send({
                         'type': 'request_vote',
@@ -548,6 +552,7 @@ class SyncObj(object):
                         'last_log_index': self.__getCurrentLogIndex(),
                         'last_log_term': self.__getCurrentLogTerm(),
                     })
+                    self.__serverDelay[node.getAddress()] = time.time()
                 self.__onLeaderChanged()  # discard queueing commands
                 if self.__votesCount >= self.__quorumSize1:
                     self.__onBecomeLeader()
@@ -735,6 +740,7 @@ class SyncObj(object):
                     self.__send(nodeAddr, {
                         'type': 'response_vote',
                         'term': message['term'],
+                        'from': self.__selfNodeAddr,
                     })
 
         if message['type'] == 'append_entries' and message['term'] >= self.__raftCurrentTerm:
@@ -831,11 +837,14 @@ class SyncObj(object):
                     self.__commandsWaitingCommit[idx].append((term, callback))
 
         if self.__raftState == _RAFT_STATE.CANDIDATE:
-            if message['type'] == 'response_vote' and message['term'] == self.__raftCurrentTerm:
-                self.__votesCount += 1
-
-                if self.__votesCount >= self.__quorumSize1:
-                    self.__onBecomeLeader()
+            if message['type'] == 'response_vote':
+                nodeAddr = message['from']
+                sendTime = self.__serverDelay[nodeAddr]
+                self.__serverDelay[nodeAddr] = time.time() - sendTime
+                if message['term'] == self.__raftCurrentTerm:
+                    self.__votesCount += 1
+                    if self.__votesCount >= self.__quorumSize1:
+                        self.__onBecomeLeader()
 
         if self.__raftState == _RAFT_STATE.LEADER:  # receive reply for "append_entries"
             if message['type'] == 'next_node_idx':
@@ -1044,6 +1053,17 @@ class SyncObj(object):
         self.__raftLeader = self.__selfNodeAddr
         self.__setState(_RAFT_STATE.LEADER)
 
+        # select committee
+        if self.__isFlexible:
+            self.__committee = set()
+            for i in range(self.__quorumSize2-1):
+                minDelay, nodeAddr = sys.maxsize, ""
+                for node in self.__serverDelay:
+                    if self.__serverDelay[node] < minDelay:
+                        minDelay, nodeAddr = self.__serverDelay[node], nodeAddr
+                self.__committee.add(nodeAddr)
+                self.__serverDelay.pop(nodeAddr)
+
         self.__lastResponseTime.clear()
         for node in self.__nodes + self.__readonlyNodes:
             nodeAddr = node.getAddress()
@@ -1090,7 +1110,9 @@ class SyncObj(object):
             sendingSerialized = False
             nextNodeIndex = self.__raftNextIndex[nodeAddr]
 
-            while nextNodeIndex <= self.__getCurrentLogIndex() or sendSingle or sendingSerialized:
+            flag = (not self.__isFlexible) or nodeAddr in self.__committee
+
+            while flag and nextNodeIndex <= self.__getCurrentLogIndex() or sendSingle or sendingSerialized:
                 if nextNodeIndex > self.__raftLog[0][1]:
                     prevLogIdx, prevLogTerm = self.__getPrevLogIndexTerm(nextNodeIndex)
                     entries = []
