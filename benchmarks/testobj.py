@@ -96,7 +96,7 @@ if __name__ == '__main__':
         time_diff += (end_time[i] - start_time[i])
 
     clusterSize = len(partners) + 1
-    filename = 'latency_cluster{}'.format(numCommands, len(partners) + 1)
+    filename = 'latency_cluster{}'.format(len(partners) + 1)
     if quorumSize1 == 0 and quorumSize2 == 0:
         quorumSize1 = clusterSize // 2 + 1
         quorumSize2 = quorumSize1
