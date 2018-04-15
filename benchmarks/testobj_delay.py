@@ -54,18 +54,20 @@ if __name__ == '__main__':
 
     quorumSize1 = sys.argv[3]
     quorumSize2 = sys.argv[4]
-    drop_ratio = sys.argv[5]
 
     selfAddr = sys.argv[6]
     if selfAddr == 'readonly':
         selfAddr = None
 
     partners = sys.argv[7:]
-
+	
     maxCommandsQueueSize = int(0.9 * SyncObjConf().commandsQueueSize / len(partners))
-
-    obj = TestObj(selfAddr, partners, quorumSize1, quorumSize2, drop_ratio)
-
+    
+    try:
+        obj = TestObj(selfAddr, partners, quorumSize1, quorumSize2)
+    except Exception as e:
+        with open('elog', 'a') as f:
+            f.write(str(e))
     while obj._getLeader() is None:
         time.sleep(0.5)
 
@@ -90,6 +92,9 @@ if __name__ == '__main__':
     delays = sorted(_g_delays)
     avgDelay = _g_delays[len(_g_delays) // 2]
     print('AVG DELAY:', avgDelay)
+    
+    with open('my_file', 'a') as f:
+        f.write(str(_g_delays) + '\n')
 
     if successRate < 0.9:
         print('LOST RATE:', 1.0 - float(_g_success + _g_error) / float(_g_sent))
