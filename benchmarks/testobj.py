@@ -99,12 +99,13 @@ if __name__ == '__main__':
 
     clusterSize = len(partners) + 1
     port = selfAddr.split(':')[1]
-    filename = 'latency_cluster{}_{}'.format(port, clusterSize)
+
     if quorumSize1 == 0 and quorumSize2 == 0:
         quorumSize1 = clusterSize // 2 + 1
         quorumSize2 = quorumSize1
     key = '{}_{}'.format(quorumSize1, quorumSize2)
+    filename = 'latency_cluster_{}_{}'.format(port, key)
     with open(filename, 'a') as f:
-        f.write(key + ' ' + str(time_diff) + '\n')
+        f.write(str(time_diff) + '\n')
 
     sys.exit(int(successRate * 100))
