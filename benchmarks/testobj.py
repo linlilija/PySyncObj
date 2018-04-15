@@ -61,6 +61,7 @@ if __name__ == '__main__':
 
     # Init a TestObj
     obj = TestObj(selfAddr, partners, quorumSize1, quorumSize2, drop_ratio)
+    print('testobj {}, partners {}, q1 {}, q2 {}'.format(selfAddr, partners, quorumSize1, quorumSize2))
 
     while obj._getLeader() is None:
         time.sleep(0.5)
@@ -91,7 +92,7 @@ if __name__ == '__main__':
     #     print('ERRORS STATS: %d' % len(_g_errors))
     #     for err in _g_errors:
     #         print(err, float(_g_errors[err]) / float(_g_error))
-    time_diff = 0
+    time_diff = 0.0
     for i in range(len(start_time)):
         time_diff += (end_time[i] - start_time[i])
 
