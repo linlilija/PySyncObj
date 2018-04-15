@@ -12,7 +12,7 @@ class TestObj(SyncObj):
         cfg = SyncObjConf(
             appendEntriesUseBatch=False,
         )
-        super(TestObj, self).__init__(selfNodeAddr, otherNodeAddrs,  quorumSize1, quorumSize2, drop_ratio, cfg)
+        super(TestObj, self).__init__(selfNodeAddr, otherNodeAddrs, quorumSize1, quorumSize2, drop_ratio, cfg)
         self.__appliedCommands = 0
 
     @replicated
@@ -55,6 +55,7 @@ if __name__ == '__main__':
     quorumSize1 = sys.argv[3]
     quorumSize2 = sys.argv[4]
     drop_ratio = sys.argv[5]
+
     selfAddr = sys.argv[6]
     if selfAddr == 'readonly':
         selfAddr = None
@@ -68,11 +69,11 @@ if __name__ == '__main__':
     while obj._getLeader() is None:
         time.sleep(0.5)
 
-    time.sleep(4.0)
+    time.sleep(2.0)
 
     startTime = time.time()
 
-    while time.time() - startTime < 25.0:
+    while time.time() - startTime < 10.0:
         st = time.time()
         for i in range(0, numCommands):
             obj.testMethod(getRandStr(cmdSize), time.time(), callback=clbck)
@@ -81,7 +82,7 @@ if __name__ == '__main__':
         assert delta <= 1.0
         time.sleep(1.0 - delta)
 
-    time.sleep(4.0)
+    time.sleep(1.0)
 
     successRate = float(_g_success) / float(_g_sent)
     print('SUCCESS RATE:', successRate)

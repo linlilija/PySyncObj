@@ -156,9 +156,9 @@ class SyncObj(object):
         self.__noopIDx = None
         self.__destroying = False
         self.__recvTransmission = ''
-        self.__quorumSize1 = quorumSize1  # flexible quorum size
-        self.__quorumSize2 = quorumSize2
-        self.__dropRatio = dropRatio  # simulate message loss
+        self.__quorumSize1 = int(quorumSize1)  # flexible quorum size
+        self.__quorumSize2 = int(quorumSize2)
+        self.__dropRatio = float(dropRatio)  # simulate message loss
 
         self.__startTime = time.time()
         globalDnsResolver().setTimeouts(self.__conf.dnsCacheTime, self.__conf.dnsFailCacheTime)
