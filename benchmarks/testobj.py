@@ -61,7 +61,8 @@ if __name__ == '__main__':
 
     # Init a TestObj
     obj = TestObj(selfAddr, partners, quorumSize1, quorumSize2, drop_ratio)
-    print('testobj {}, partners {}, q1 {}, q2 {}'.format(selfAddr, partners, quorumSize1, quorumSize2))
+    with open('run params', 'a') as f:
+        f.write('testobj {}, partners len {}, q1 {}, q2 {}\n'.format(selfAddr, len(partners), quorumSize1, quorumSize2))
 
     while obj._getLeader() is None:
         time.sleep(0.5)
