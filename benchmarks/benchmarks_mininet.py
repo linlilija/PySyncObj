@@ -64,7 +64,7 @@ def singleBenchmark(requestsPerSecond, requestSize, numNodes, quorumSize1, quoru
     errRates = []
     for p in processes:
         p.communicate()
-        errRates.append(float(p.returncode) / 100.0)
+        errRates.append(p.returncode)
     avgRate = sum(errRates) / len(errRates)
     # print('average success rate:', avgRate)
     if delay:
