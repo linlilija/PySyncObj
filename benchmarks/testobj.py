@@ -95,8 +95,13 @@ if __name__ == '__main__':
     for i in range(len(start_time)):
         time_diff += (end_time[i] - start_time[i])
 
-    filename = 'latency_{}_{}'.format(numCommands, len(partners))
+    clusterSize = len(partners) + 1
+    filename = 'latency_cluster{}'.format(numCommands, len(partners) + 1)
+    if quorumSize1 == 0 and quorumSize2 == 0:
+        quorumSize1 = clusterSize // 2 + 1
+        quorumSize2 = quorumSize1
+    key = '{}_{}'.format(quorumSize1, quorumSize2)
     with open(filename, 'a') as f:
-        f.write(json.dumps({quorumSize2: time_diff}))
+        f.write(key + ' ' + str(time_diff))
 
     sys.exit(int(successRate * 100))
