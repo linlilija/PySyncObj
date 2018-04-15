@@ -44,11 +44,13 @@ def memoize(fileName):
     return doMemoize
 
 
-def singleBenchmark(requestsPerSecond, requestSize, numNodes, quorumSize1, quorumSize2, host_list):
+def singleBenchmark(requestsPerSecond, requestSize, numNodes, quorumSize1, quorumSize2, host_list, delay=False):
     """Execute benchmark."""
     # Distribute requests to nodes evenly 
     rpsPerNode = requestsPerSecond // numNodes
-    cmd = [sys.executable, 'testobj.py', str(rpsPerNode), str(requestSize), str(quorumSize1), str(quorumSize2), str(0)]
+    # cmd = [sys.executable, 'testobj.py', str(rpsPerNode), str(requestSize), str(quorumSize1), str(quorumSize2), str(0)]
+    cmd = [sys.executable, 'testobj_delay.py' if delay else 'testobj.py', str(rpsPerNode), str(requestSize),
+           str(quorumSize1), str(quorumSize2), str(drop_ratio)]
     processes = []
     allAddrs = []
     for i in range(numNodes):
@@ -61,10 +63,12 @@ def singleBenchmark(requestsPerSecond, requestSize, numNodes, quorumSize1, quoru
         processes.append(p)
     errRates = []
     for p in processes:
-        p.communicate(timeout=60)
+        p.communicate()
         errRates.append(float(p.returncode) / 100.0)
     avgRate = sum(errRates) / len(errRates)
     # print('average success rate:', avgRate)
+    if delay:
+        return avgRate
     return avgRate >= 0.9
 
 def vote(c, requestSize, numNodes, quorumSize1, quorumSize2, host_list):
@@ -131,9 +135,6 @@ def test_flexible_raft(drop_ratio):
     """Measure RPS vs cluster size of flexible Raft"""
     cluster_size = [i for i in range(3, 8, 2)]
     # test different phase 2 quorum size
-    delayMin = 13.640
-    delayAvg = 20.822
-    delayStddev = 24.018
     fixedRps = 2000
     for i in cluster_size:
         """Create network"""
@@ -149,18 +150,8 @@ def test_flexible_raft(drop_ratio):
         # rps = []
         # latencies = {}
         for j in range(0, min(i // 2 + 1, 4)):
-            # res = detectMaxRps(200, i, i + 1 - j, j, host_list) if j != 0 else detectMaxRps(200, i, 0, 0, host_list)
-            singleBenchmark(fixedRps, 200, i, i + 1 - j, j, host_list) if j != 0 else singleBenchmark(fixedRps, 200, i, 0, 0, host_list)
-            # count = 0
-            # latency = []
-            # while count < 3:
-            #     start = time.time()
-            #     if singleBenchmark(fixedRps, 200, i, i + 1 - j, j, host_list) if j != 0 else singleBenchmark(fixedRps, 200, i, 0, 0, host_list):
-            #         end = time.time()
-            #         latency.append(end - start)
-            #         count += 1
-            # rps.append(res)
-            # latencies[j] = latency
+            res = singleBenchmark(fixedRps, 200, i, i + 1 - j, j, host_list, True) if j != 0 else singleBenchmark(fixedRps, 200, i, 0, 0, host_list, True)
+            print('Average delay:', res)
 
         """Record data"""
         # sleep(1)
