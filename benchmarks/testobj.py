@@ -102,6 +102,6 @@ if __name__ == '__main__':
         quorumSize2 = quorumSize1
     key = '{}_{}'.format(quorumSize1, quorumSize2)
     with open(filename, 'a') as f:
-        f.write(key + ' ' + str(time_diff))
+        f.write(key + ' ' + str(time_diff) + '\n')
 
     sys.exit(int(successRate * 100))
