@@ -52,13 +52,13 @@ if __name__ == '__main__':
     numCommands = int(float(sys.argv[1]))
     cmdSize = int(sys.argv[2])
 
-    selfAddr = sys.argv[3]
+    quorumSize1 = sys.argv[3]
+    quorumSize2 = sys.argv[4]
+    drop_ratio = sys.argv[5]
+    selfAddr = sys.argv[6]
     if selfAddr == 'readonly':
         selfAddr = None
 
-    quorumSize1 = sys.argv[4]
-    quorumSize2 = sys.argv[5]
-    drop_ratio = sys.argv[6]
     partners = sys.argv[7:]
 
     maxCommandsQueueSize = int(0.9 * SyncObjConf().commandsQueueSize / len(partners))

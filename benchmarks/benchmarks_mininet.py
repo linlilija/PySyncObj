@@ -150,7 +150,7 @@ def test_flexible_raft(drop_ratio):
         # rps = []
         # latencies = {}
         for j in range(0, min(i // 2 + 1, 4)):
-            res = singleBenchmark(fixedRps, 200, i, i + 1 - j, j, host_list, True) if j != 0 else singleBenchmark(fixedRps, 200, i, 0, 0, host_list, True)
+            res = singleBenchmark(fixedRps, 200, i, i + 1 - j, j, host_list, delay=True) if j != 0 else singleBenchmark(fixedRps, 200, i, 0, 0, host_list, delay=True)
             print('cluster size {}, q1 {}, q2 {}'.format(i, 0 if j == 0 else i - j + 1, j))
             print('Average delay:', res)
 
