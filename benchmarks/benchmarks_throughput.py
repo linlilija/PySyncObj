@@ -29,7 +29,7 @@ def singleBenchmark(numNodes, quorumSize1=0, quorumSize2=0, drop_ratio=0.0, numN
         p.communicate()
         num_success.append(p.returncode)
     print(num_success)
-    avgRPS = sum(num_success) / 30.0
+    avgRPS = sum(num_success) / 20.0
     print('average RPS:', avgRPS)
     return avgRPS
 

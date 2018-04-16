@@ -35,12 +35,12 @@ def measure(argv):
     count = 0
     while time.time() - startTime < 10.0:
         counter1.inc(sync=True)
-    while time.time() - startTime < 40.0:
+    while time.time() - startTime < 30.0:
         counter1.inc(sync=True)
         count += 1
 
     print(obj.getStatus()['raft_term'])
-    time.sleep(2.0)
+    time.sleep(4.0)
 
     return count
 
