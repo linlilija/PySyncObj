@@ -45,7 +45,7 @@ def getRandStr(l):
     return f % random.randrange(16 ** l)
 
 if __name__ == '__main__':
-    if len(sys.argv) < 8:
+    if len(sys.argv) < 7:
         print('Usage: %s RPS requestSize selfHost:port partner1Host:port partner2Host:port ...' % sys.argv[0])
         sys.exit(-1)
 
@@ -60,14 +60,11 @@ if __name__ == '__main__':
         selfAddr = None
 
     partners = sys.argv[7:]
-	
+
     maxCommandsQueueSize = int(0.9 * SyncObjConf().commandsQueueSize / len(partners))
-    
-    try:
-        obj = TestObj(selfAddr, partners, quorumSize1, quorumSize2)
-    except Exception as e:
-        with open('elog', 'a') as f:
-            f.write(str(e))
+
+    obj = TestObj(selfAddr, partners, quorumSize1, quorumSize2)
+
     while obj._getLeader() is None:
         time.sleep(0.5)
 
@@ -87,14 +84,11 @@ if __name__ == '__main__':
     time.sleep(1.0)
 
     successRate = float(_g_success) / float(_g_sent)
-    print('SUCCESS RATE:', successRate)
+    print('\tSUCCESS RATE:', successRate)
 
     delays = sorted(_g_delays)
     avgDelay = _g_delays[len(_g_delays) // 2]
-    print('AVG DELAY:', avgDelay)
-    
-    with open('my_file', 'a') as f:
-        f.write(str(_g_delays) + '\n')
+    # print('\tAVG DELAY:', avgDelay)
 
     if successRate < 0.9:
         print('LOST RATE:', 1.0 - float(_g_success + _g_error) / float(_g_sent))

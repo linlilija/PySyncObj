@@ -4,7 +4,7 @@ import pickle
 from functools import wraps
 from subprocess import Popen, PIPE
 import os
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 DEVNULL = open(os.devnull, 'wb')
 
 START_PORT = 4321
@@ -51,7 +51,7 @@ def singleBenchmark(requestsPerSecond, requestSize, numNodes, quorumSize1=0, quo
     errRates = []
     for p in processes:
         p.communicate()
-        errRates.append(float(p.returncode) / 100.0)
+        errRates.append(float(p.returncode) / 100)
     avgRate = sum(errRates) / len(errRates)
     # print('average success rate:', avgRate)
     if delay:
@@ -111,11 +111,11 @@ def measure_RPS_vs_Clustersize(q2=0, drop_ratio=0.0):
         res = detectMaxRps(200, i, i+1-q2, q2, drop_ratio) if q2 != 0 else detectMaxRps(200, i, 0, 0, drop_ratio)
         print('nodes number: %d, rps: %d' % (i, int(res)))
         rps.append(res)
-    plt.plot(cluster_size, rps)
-    plt.xlabel("Cluster Size")
-    plt.ylabel("RPS")
-    plt.title("RPS vs Cluster Size")
-    plt.show()
+    # plt.plot(cluster_size, rps)
+    # plt.xlabel("Cluster Size")
+    # plt.ylabel("RPS")
+    # plt.title("RPS vs Cluster Size")
+    # plt.show()
 
 
 def measure_RPS_vs_Requestsize():
@@ -126,33 +126,39 @@ def measure_RPS_vs_Requestsize():
         res = detectMaxRps(i, 3)
         print('request size: %d, rps: %d' % (i, int(res)))
         rps.append(res)
-    plt.plot(request_size, rps)
-    plt.xlabel("Request Size")
-    plt.ylabel("RPS")
-    plt.title("RPS vs Request Size")
-    plt.show()
+    # plt.plot(request_size, rps)
+    # plt.xlabel("Request Size")
+    # plt.ylabel("RPS")
+    # plt.title("RPS vs Request Size")
+    # plt.show()
 
 
 def test_flexible_raft(drop_ratio):
     """Measure RPS vs cluster size of flexible Raft"""
-    color_list = ['red', 'green', 'blue', 'orange']
+    # color_list = ['red', 'green', 'blue', 'orange']
     cluster_size = [i for i in range(3, 10, 2)]
     # test different phase 2 quorum size
-    for j in range(0, 4):
-        rps = []
-        for i in cluster_size:
-            res = detectMaxRps(200, i, i + 1 - j, j, drop_ratio) if j != 0 else detectMaxRps(200, i, 0, 0, drop_ratio)
-            rps.append(res)
-        # plt.plot(cluster_size, rps, color=color_list[j], label=("q2=%d" % j))
-        filename = "result_%d_%f" % (j, drop_ratio)
-        with open(filename, 'a') as f:
-            f.write("RPS with quorum size = %d & drop ratio = %f" % (j, drop_ratio))
-            f.write(str(rps))
+    # for j in range(0, 4):
+    #     rps = []
+    #     for i in cluster_size:
+    #         res = detectMaxRps(200, i, i + 1 - j, j, drop_ratio) if j != 0 else detectMaxRps(200, i, 0, 0, drop_ratio)
+    #         rps.append(res)
+    #     # plt.plot(cluster_size, rps, color=color_list[j], label=("q2=%d" % j))
+    #     filename = "result_%d_%f" % (j, drop_ratio)
+    #     with open(filename, 'a') as f:
+    #         f.write("RPS with quorum size = %d & drop ratio = %f" % (j, drop_ratio))
+    #         f.write(str(rps))
     # plt.xlabel("Cluster Size")
     # plt.ylabel("RPS")
     # plt.title("RPS vs Cluster Size")
     # plt.legend()
     # plt.show()
+    fixedRps = 20
+    for i in cluster_size:
+        for j in range(0, min(i // 2 + 1, 5)):
+            res = singleBenchmark(fixedRps * i, 10, i, i + 1 - j, j, delay=True) if j != 0 else singleBenchmark(fixedRps * i, 10, i, 0, 0, delay=True)
+            print('cluster size {}, q1 {}, q2 {}'.format(i, 0 if j == 0 else i - j + 1, j))
+            print('Average delay:', res)
 
 
 if __name__ == '__main__':
@@ -169,7 +175,8 @@ if __name__ == '__main__':
     drop_ratio = [-1, 0.01, 0.05]
 
     if mode == 'delay':
-        print('Average delay:', singleBenchmark(50, 10, 5, delay=True))
+        # print('Average delay:', singleBenchmark(50, 10, 5, delay=True))
+        test_flexible_raft(0)
     elif mode == 'rps':
         for i in range(3):
             test_flexible_raft(drop_ratio[i])
