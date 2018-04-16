@@ -1,5 +1,6 @@
 from __future__ import print_function
 import sys
+import os
 import time
 import random
 from collections import defaultdict
@@ -33,15 +34,13 @@ def measure(argv):
     count = 0
     startTime = time.time()
     while time.time() - startTime < 10.0:
-        counter1.inc(sync=True)
-    while time.time() - startTime < 60.0:
-        counter1.inc(sync=True)
+        counter1.inc()
+    while time.time() - startTime < 40.0:
+        counter1.inc()
         count += 1
-    while time.time() - startTime < 5.0:
-        counter1.inc(sync=True)
 
-    time.sleep(2.0)
-
+    print(obj.getStatus()['raft_term'])
+    time.sleep(4.0)
     return count
 
 

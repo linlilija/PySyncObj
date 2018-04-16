@@ -33,10 +33,10 @@ class SyncObjConf(object):
 
         #: After randomly selected timeout (in range from minTimeout to maxTimeout)
         #: leader considered dead, and leader election starts.
-        self.raftMinTimeout = kwargs.get('raftMinTimeout', 0.4)
+        self.raftMinTimeout = kwargs.get('raftMinTimeout', 1.0)
 
         #: Same as raftMinTimeout
-        self.raftMaxTimeout = kwargs.get('raftMaxTimeout', 1.4)
+        self.raftMaxTimeout = kwargs.get('raftMaxTimeout', 2.0)
 
         #: Interval of sending append_entries (ping) command.
         #: Should be less than raftMinTimeout.

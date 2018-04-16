@@ -43,7 +43,7 @@ def singleBenchmark(numNodes, quorumSize1=0, quorumSize2=0, drop_ratio=0.0, numN
         p.communicate()
         num_success.append(p.returncode)
     print(num_success)
-    avgRPS = sum(num_success) / 50.0
+    avgRPS = sum(num_success) / 30.0
     print('average RPS:', avgRPS)
     return avgRPS
 
@@ -60,7 +60,7 @@ class SingleSwitchTopo(Topo):
         for h in range(n):
             randDelay = str(self.__getRandomDelay()) + 'ms'
             host = self.addHost('h%s' % (h + 1), cpu=.9 / n)
-            self.addLink(host, switch, bw=100, delay=randDelay, loss=drop_ratio, use_htb=True)
+            self.addLink(host, switch, bw=10, delay='5ms', loss=drop_ratio, use_htb=True)
 
     def __getRandomDelay(self):
         delay = math.ceil(random.gauss(self.__delayAvg, self.__delayStddev))
@@ -88,11 +88,11 @@ def test_flexible_raft(drop_ratio):
         """Measure performance"""
         rps = []
         for j in range(0, min(i//2+1, 4)):
-            res = singleBenchmark(i, i + 1 - j, j, drop_ratio, 10-i) if j != 0 else singleBenchmark(i, 0, 0, drop_ratio, 10-i)
+            res = singleBenchmark(i, i + 1 - j, j, drop_ratio) if j != 0 else singleBenchmark(i, 0, 0, drop_ratio)
             rps.append(res)
 
         """Record data"""
-        sleep(1)
+        sleep(1.0)
         net.stop()
         filename = "result_%d_%f" % (i, drop_ratio)
         with open(filename, 'a') as f:
@@ -104,7 +104,7 @@ if __name__ == '__main__':
     # setLogLevel( 'info' )
 
     # set message loss rate %
-    drop_ratio = [0, 0.1, 1]
+    drop_ratio = [0, 0.1, 0.5]
 
     for i in drop_ratio:
         test_flexible_raft(i)
