@@ -25,7 +25,7 @@ def measure(argv):
 
     # Init a TestObj
     counter1 = ReplCounter()
-    obj = SyncObj(selfAddr, partners, quorumSize1, quorumSize2, drop_ratio, consumers=[counter1, counter2])
+    obj = SyncObj(selfAddr, partners, quorumSize1, quorumSize2, drop_ratio, consumers=[counter1])
 
     while obj._getLeader() is None:
         time.sleep(0.5)
@@ -34,7 +34,7 @@ def measure(argv):
     startTime = time.time()
     count = 0
     while time.time() - startTime < 10.0:
-        counter1.inc(0, sync=True)
+        counter1.inc(sync=True)
     while time.time() - startTime < 40.0:
         counter1.inc(sync=True)
         count += 1
