@@ -28,13 +28,15 @@ _g_success = 0
 _g_error = 0
 _g_errors = defaultdict(int)
 _g_delays = []
+_g_delay = 0.0
 
 def clbck(res, err):
-    global _g_error, _g_success, _g_delays
+    global _g_error, _g_success, _g_delays, _g_delay
     if err == FAIL_REASON.SUCCESS:
         _g_success += 1
         callTime, recvTime = res
         delay = time.time() - callTime
+        _g_delay += delay
         _g_delays.append(delay)
     else:
         _g_error += 1
@@ -72,7 +74,7 @@ if __name__ == '__main__':
 
     startTime = time.time()
 
-    while time.time() - startTime < 10.0:
+    while time.time() - startTime < 15.0:
         st = time.time()
         for i in range(0, numCommands):
             obj.testMethod(getRandStr(cmdSize), time.time(), callback=clbck)
@@ -81,7 +83,7 @@ if __name__ == '__main__':
         assert delta <= 1.0
         time.sleep(1.0 - delta)
 
-    time.sleep(1.0)
+    time.sleep(2.0)
 
     successRate = float(_g_success) / float(_g_sent)
     print('\tSUCCESS RATE:', successRate)
@@ -96,4 +98,5 @@ if __name__ == '__main__':
         for err in _g_errors:
             print(err, float(_g_errors[err]) / float(_g_error))
 
-    sys.exit(int(avgDelay * 10000))
+    # sys.exit(int(avgDelay * 10000))
+    sys.exit(int(_g_delay * 10000))

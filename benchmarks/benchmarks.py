@@ -51,7 +51,7 @@ def singleBenchmark(requestsPerSecond, requestSize, numNodes, quorumSize1=0, quo
     errRates = []
     for p in processes:
         p.communicate()
-        errRates.append(float(p.returncode) / 100)
+        errRates.append(float(p.returncode) / 10000.0)
     avgRate = sum(errRates) / len(errRates)
     # print('average success rate:', avgRate)
     if delay:
@@ -153,10 +153,10 @@ def test_flexible_raft(drop_ratio):
     # plt.title("RPS vs Cluster Size")
     # plt.legend()
     # plt.show()
-    fixedRps = 20
+    fixedRps = 50
     for i in cluster_size:
         for j in range(0, min(i // 2 + 1, 5)):
-            res = singleBenchmark(fixedRps * i, 10, i, i + 1 - j, j, delay=True) if j != 0 else singleBenchmark(fixedRps * i, 10, i, 0, 0, delay=True)
+            res = singleBenchmark(fixedRps, 10, i, i + 1 - j, j, delay=True) if j != 0 else singleBenchmark(fixedRps, 10, i, 0, 0, delay=True)
             print('cluster size {}, q1 {}, q2 {}'.format(i, 0 if j == 0 else i - j + 1, j))
             print('Average delay:', res)
 
