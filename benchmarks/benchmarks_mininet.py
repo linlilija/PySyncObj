@@ -135,7 +135,7 @@ def test_flexible_raft(drop_ratio):
     """Measure RPS vs cluster size of flexible Raft"""
     cluster_size = [i for i in range(3, 8, 2)]
     # test different phase 2 quorum size
-    fixedRps = 2000
+    fixedRps = 50
     for i in cluster_size:
         """Create network"""
         # topo = SingleSwitchTopo(i, drop_ratio, delayMin, delayAvg, delayStddev)
@@ -149,8 +149,12 @@ def test_flexible_raft(drop_ratio):
         """Measure performance"""
         # rps = []
         # latencies = {}
+        # for j in range(0, min(i // 2 + 1, 4)):
+        #     res = singleBenchmark(fixedRps, 200, i, i + 1 - j, j, host_list, delay=True) if j != 0 else singleBenchmark(fixedRps, 200, i, 0, 0, host_list, delay=True)
+        #     print('cluster size {}, q1 {}, q2 {}'.format(i, 0 if j == 0 else i - j + 1, j))
+        #     print('Average delay:', res)
         for j in range(0, min(i // 2 + 1, 4)):
-            res = singleBenchmark(fixedRps, 200, i, i + 1 - j, j, host_list, delay=True) if j != 0 else singleBenchmark(fixedRps, 200, i, 0, 0, host_list, delay=True)
+            res = singleBenchmark(fixedRps, 10, i, i + 1 - j, j, host_list, delay=True) if j != 0 else singleBenchmark(fixedRps, 10, i, 0, 0, host_list, delay=True)
             print('cluster size {}, q1 {}, q2 {}'.format(i, 0 if j == 0 else i - j + 1, j))
             print('Average delay:', res)
 
