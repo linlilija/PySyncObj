@@ -1,3 +1,7 @@
+This instruction assumes a starting point of a fresh Ubuntu operating system
+
+Mininet native installation instruction from source
+
 Install:
 git clone git://github.com/mininet/mininet
 mininet/util/install.sh -a
