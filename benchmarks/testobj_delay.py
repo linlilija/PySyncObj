@@ -92,4 +92,4 @@ if __name__ == '__main__':
         for err in _g_errors:
             print(err, float(_g_errors[err]) / float(_g_error))
 
-    sys.exit(int(avgDelay * 100))
+    sys.exit(int(avgDelay * 10000))
